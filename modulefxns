@@ -1,0 +1,76 @@
+module.exports = {
+	addNewCoord : function(var long, var lat) { //person moved or pressed "start"
+		var coord = {x: long, y: lat};
+		if(arrayOfCoords.length() == 0) arrayOfCoords = [coord]; //Person hasn't moved yet. Init array
+		if(arrayOfCoords.length() == 1) { //Person has only moved once
+			arrayOfCoords = [coord];
+		}
+		var arlength = arrayOfCoords.length();
+		if(arrayOfCoords[arlength - 2] != coord) { //If person didn't go right back
+			for(var i = 0; var i < arlength - 2; i++) { 
+				if(arrayOfCoords[i] == coord) { //Person made a loop
+					renderTiles(i);
+				}
+			}
+		}
+		arrayOfCoords[arlength] = coord;
+		console.log("Added coordinates.");
+	},
+	endRun : function() {
+		//de-allocate all arrayOfCoords memory
+	}
+};
+
+var arrayOfCoords;
+
+function renderTiles(var startIndex) {
+	for(var i = 0; i < arrayOfCoords.length() - 1; i++) {
+		addEdge(arrayOfCoords[i], arrayOfCoords[i+1]);
+	}
+}
+
+function addEdge(var firstCoord, var secondCoord) {
+	var firstCoord = arrayOfCoords[startIndex]; //Get both Coords and possible surrounding Coords
+	var arrayPossCoordOne = getSurrCoords(firstCoord); 
+	var oneSize = arrayPossCoordOne.length;
+	var secondCoord = arrayOfCoords[startIndex+1];
+	var arrayPossCoordTwo = getSurrCoords(secondCoord);
+	var twoSize = arrayPossCoordTwo.length;
+
+	var masterSlope = getSlope(firstCoord, secondCoord);
+
+	var addTileOne = [firstCoord, secondCoord];
+
+	for(var i = 0; i < oneSize; i++) {
+		var slope = getSlope(firstCoord, arrayPossCoordOne[i]);
+		if(slope != masterSlope) addTile.push(arrayPossCoordOne[i]);
+	}
+
+	var addTileTwo = [firstCoord, secondCoord];
+
+	for(var i = 0; i < twoSize; i++) {
+		var slope = getSlope(secondCoord, arrayPossCoordTwo[i]);
+		if(slope != masterSlope) addTile.push(arrayPossCoordTwo[i]);
+	}
+
+	var swap = addTileOne.pop();
+	addTileOne.push(addTileTwo.pop());
+	addTileTwo.push(swap);
+
+	addTile(addTileOne);
+	addTile(addTileTwo);
+
+	console.log("Rendered tiles.")
+}
+
+function getSlope(var coordOne, var coordTwo) {
+	return (coordOne.y - coordTwo.y) / (coordOne.x - coordTwo.x);
+}
+
+function addTile(var arrOfTile) {
+	
+}
+
+function getSurrCoords(var Coord) {
+	//return array of 4 Coords
+}
