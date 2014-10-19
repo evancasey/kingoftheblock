@@ -5,12 +5,18 @@
 
 var express = require('express'),
 	routes = require('./routes'),
-	session = require('./routes/session'),
 	http = require('http'),
 	path = require('path'),
-        io = require('socket.io');
+    io = require('socket.io'),
+    mongoose = require('mongoose'),
+    userModel = require('./models/users.js'),
+    intersectionModel = require('./models/intersection.js');
 
 var app = express();
+
+var dbString = 'mongodb://evan:Sk8board@ds047050.mongolab.com:47050/kingoftheblock';
+
+mongoose.connect(dbString);
 
 // all environments
 app.set('port', process.env.PORT || 3000);
@@ -29,7 +35,6 @@ if ('development' == app.get('env')) {
 }
 
 app.get('/', routes.index);
-app.get('/start', session.index);
 
 function handler (req, res) {
     fs.readfile(__direname  + '/index.html',
@@ -49,55 +54,107 @@ server.listen(app.get('port'), function(){
   console.log('Express server listening on port ' + app.get('port'));
 });
 
+
+//model stuff
+var User = mongoose.model('User'),
+    Intersection = mongoose.model('Intersection');
+
+Intersection.collection.ensureIndex({ loc : "2d" }, function(error, res) {
+    if(error){
+        return console.error('failed ensureIndex with error', error);
+    }
+    console.log('ensureIndex succeeded with response', res);
+});    
+
+
+//sockets stuff
 var blocksio = io.listen(server);
 
-blocksio.sockets.on('connection', function (socket) {
+blocksio.sockets.on('connection', function(socket) { 
 
-    socket.on('clientConnect', function(data) {
-        var userId = data.userId;        
-        socket.set('userId', userId, function() {                        
-            console.log(roomID);
-            socket.broadcast.to(roomID).emit('mobileReady', data);                
-        });        
+    function userWithCoordsProto() {
+
+        this.coordsVisited = [];
+        this.userId = "";
+        var self = this;
+
+        this.updateBlocks = function(coords) {
+            this.coordsVisited.push(coords);
+
+            this.getClosestIntersections(coords, function(results) {
+                var blocks = self.calculateBlocks(results) 
+                console.log(blocks);
+
+                var newUser = User({
+                    userId : self.userId,
+                    blocks : [{loc1 : blocks[0],
+                               loc2 : blocks[1],
+                               loc3 : blocks[2],
+                               loc4 : blocks[3],
+                               score : 1}] 
+                });
+
+                newUser.save(console.log);
+            });
+        }
+
+        this.updateBlocksOnStart = function(coords) {
+            this.coordsVisited.push(coords);
+            this.getNearestValidIntersection(coords, function(results) {
+                var blocks = self.calculateBlocks(results);
+                               
+                var newUser = User({
+                    userId : self.userId,
+                    blocks : [{loc1 : blocks[0],
+                               loc2 : blocks[1],
+                               loc3 : blocks[2],
+                               loc4 : blocks[3],
+                               score : 1}] 
+                });            
+
+                newUser.save(console.log);
+            });
+        }
+
+        this.getClosestIntersections = function(coords, callback) {    
+            Intersection.find({ 
+                loc : { '$near' : coords } 
+            }).limit(4).exec(function(err, results) {
+                callback(results);
+            });
+        }
+
+        this.getNearestValidIntersection = function(coords, callback) {
+            Intersection.find({ 
+                loc : { '$near' : coords } 
+            }).limit(1).exec(function(err, results) {
+                callback(results);
+            });
+        }
+
+        this.calculateBlocks = function(coordsList) {
+            return [[1,1],[1,1],[1,1],[1,1]]
+        }
+    }
+
+    var userWithCoords = new userWithCoordsProto();   
+
+    socket.on('startLocation', function(data) {            
+        socket.set('userId', data.userId, function() {
+            console.log("starting loc");
+            console.log(data.userId);
+            console.log(data.coords);
+            userWithCoords.userId = data.userId;
+            userWithCoords.updateBlocksOnStart(data.coords);
+        })
     });
 
-    // socket.on('startTime', function(startTime) {
-    //     socket.get('roomID', function (err, roomID) {
-    //         socket.get('username', function (err, username) {
-    //             console.log(username);
-    //             var data = {
-    //                 'username': username,
-    //                 'startTime': startTime
-    //             };
-    //             socket.broadcast.to(roomID).emit('started', data);
-    //         });
-    //     });
-    // });
-
-    // socket.on('elapsedTime', function(elapsedTime) {
-    //     socket.get('roomID', function (err, roomID) {
-    //         socket.get('username', function (err, username) {
-    //             console.log(username);
-    //             var data = {
-    //                 'username': username,
-    //                 'elapsedTime': elapsedTime
-    //             };
-    //             socket.broadcast.to(roomID).emit('elapsed', data);
-    //         });
-    //     });
-    // });
-
-    // socket.on('disconnect', function() {
-    //     socket.get('username', function(err, username) {
-    //         socket.get('roomID', function(err, roomID) {
-    //             console.log("disconnect");
-    //             socket.broadcast.to(roomID).emit('user disconnected',
-    //                 {'roomID': roomID, 'username': username});
-    //         });
-    //     });
-    // });
-
-    // socket.on('testing', function(data) {
-    //     console.log(data);
-    // });
+    socket.on('updateLocation', function(data) {        
+        socket.set('userId', data.userId, function() {
+            console.log("updating loc");
+            console.log(data.userId);
+            console.log(data.coords);            
+            userWithCoords.updateBlocks(data.coords);
+        })     
+    });
 });
