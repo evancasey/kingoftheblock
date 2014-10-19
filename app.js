@@ -156,10 +156,10 @@ blocksio.sockets.on('connection', function(socket) {
         }
         this.addEdge = function(firstCoord, secondCoord) {
             var firstCoord = user.visitedIntersections[startIndex]; //Get both Coords and possible surrounding Coords
-            var arrayPossCoordOne = getClosestIntersections(firstCoord, 4, ); //what's the callback?
+            var arrayPossCoordOne = getClosestIntersections(firstCoord, 4, ); //TO DO: what's the callback?
             var oneSize = arrayPossCoordOne.length;
             var secondCoord = user.visitedIntersections[startIndex+1];
-            var arrayPossCoordTwo = getClosestIntersections(secondCoord, 4, ); //what's the callback?
+            var arrayPossCoordTwo = getClosestIntersections(secondCoord, 4, ); //TO DO: what's the callback?
             var twoSize = arrayPossCoordTwo.length;
 
             var masterSlope = getSlope(firstCoord, secondCoord);
@@ -182,7 +182,7 @@ blocksio.sockets.on('connection', function(socket) {
             addTileOne.push(addTileTwo.pop());
             addTileTwo.push(swap);
 
-            addTile(addTileOne); //Return two four Coord arrays
+            addTile(addTileOne); //TO DO: Return two four Coord arrays
             addTile(addTileTwo);
 
             console.log("Rendered tiles.")
