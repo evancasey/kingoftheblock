@@ -68,7 +68,7 @@ function getSlope(var coordOne, var coordTwo) {
 }
 
 function addTile(var arrOfTile) {
-	
+
 }
 
 function getSurrCoords(var Coord) {
