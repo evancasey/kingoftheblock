@@ -91,6 +91,15 @@ blocksio.sockets.on('connection', function(socket) {
 
                 if (results[0].loc[0] != self.visitedIntersections[self.visitedIntersections.length - 1].loc[0]) {
 
+                    //Fay's code
+                    for(var i = 0; var i < self.visitedIntersections.length - 2; i++) { 
+                        if(self.visitedIntersections[i] == coord) { //Person made a loop
+                            for(i; i < self.visitedIntersections.length() - 1; i++) {
+                                user.addEdge(self.visitedIntersections[i], self.visitedIntersections[i+1]);
+                            }
+                        }
+                    }
+
                     self.visitedIntersections.push(results[0]);
 
                     console.log("updating blocks!");
@@ -141,6 +150,43 @@ blocksio.sockets.on('connection', function(socket) {
         //         return results
         //     });
         // }
+
+        this.getSlope = function(var coordOne, var coordTwo) {
+            return (coordOne.y - coordTwo.y) / (coordOne.x - coordTwo.x);
+        }
+        this.addEdge = function(firstCoord, secondCoord) {
+            var firstCoord = user.visitedIntersections[startIndex]; //Get both Coords and possible surrounding Coords
+            var arrayPossCoordOne = getClosestIntersections(firstCoord, 4, ); //what's the callback?
+            var oneSize = arrayPossCoordOne.length;
+            var secondCoord = user.visitedIntersections[startIndex+1];
+            var arrayPossCoordTwo = getClosestIntersections(secondCoord, 4, ); //what's the callback?
+            var twoSize = arrayPossCoordTwo.length;
+
+            var masterSlope = getSlope(firstCoord, secondCoord);
+
+            var addTileOne = [firstCoord, secondCoord];
+
+            for(var i = 0; i < oneSize; i++) {
+                var slope = getSlope(firstCoord, arrayPossCoordOne[i]);
+                if(slope != masterSlope) addTileOne.push(arrayPossCoordOne[i]);
+            }
+
+            var addTileTwo = [firstCoord, secondCoord];
+
+            for(var i = 0; i < twoSize; i++) {
+                var slope = getSlope(secondCoord, arrayPossCoordTwo[i]);
+                if(slope != masterSlope) addTileTwo.push(arrayPossCoordTwo[i]);
+            }
+
+            var swap = addTileOne.pop();
+            addTileOne.push(addTileTwo.pop());
+            addTileTwo.push(swap);
+
+            addTile(addTileOne); //Return two four Coord arrays
+            addTile(addTileTwo);
+
+            console.log("Rendered tiles.")
+        }
 
     }
 
