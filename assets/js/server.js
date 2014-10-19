@@ -1,3 +1,5 @@
+console.log("here")
+
 // var socket = io.connect('/'),
 // 		roomID = Math.round(Math.random()*6969).toString(),  // create a random session ID 
 // 		players = [];

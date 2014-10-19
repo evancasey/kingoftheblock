@@ -7,6 +7,7 @@ var userId = "tim";
 
 // for (var i = 0; i<20; i++) {
 
+
 var test1 = -73.95548
 var test2 = 40.73762
 setInterval(function() {

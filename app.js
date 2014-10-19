@@ -81,6 +81,18 @@ blocksio.sockets.on('connection', function(socket) {
 
         var self = this;
 
+        this.containsArr = function(currentCoords) {
+            for (var i = 0; i < self.visitedIntersections.length; i++) {
+                if (self.visitedIntersections[i] == currentCoords[0].loc) {
+                    console.log("HERE")
+                    console.log(self.visitedIntersections[i])
+                    console.log(currentCoords[0].loc)
+                    return true
+                }
+            }
+            return false
+        }
+
         this.updateBlocks = function(coords) {            
 
             var closestNextIntersection = self.getClosestIntersections(coords, 10, function(results) {
@@ -88,6 +100,11 @@ blocksio.sockets.on('connection', function(socket) {
                 // console.log(self.visitedIntersections[self.visitedIntersections.length - 1].loc);
             
                 // console.log(self.visitedIntersections[0].loc);
+
+                if (self.visitedIntersections.length > 2 && self.containsArr(coords) || self.visitedIntersections > 3) {
+                    console.log("loop");
+                    socket.emit('loopFound', {"result": self.visitedIntersections});
+                }
 
                 if (results[0].loc[0] != self.visitedIntersections[self.visitedIntersections.length - 1].loc[0]) {
 
@@ -145,7 +162,6 @@ blocksio.sockets.on('connection', function(socket) {
     }
 
     var userWithCoords = new userWithCoordsProto();   
-
 
     socket.on('updateLocation', function(data) {        
         socket.set('userId', data.userId, function() {
