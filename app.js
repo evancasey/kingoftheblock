@@ -96,16 +96,16 @@ blocksio.sockets.on('connection', function(socket) {
                     console.log("updating blocks!");
 
                     // update blocks owned
-                    self.getClosestIntersections(results[0].loc, 4, function(results) {
-                        // var blocks = self.calculateBlocks(self.visitedIntersections[self.visitedIntersections.length - 1]) 
+                    self.getClosestIntersections(results[0].loc, 5, function(results) {
+                        
                         console.log(blocks);
 
                         var newUser = User({
                             userId : self.userId,
-                            blocks : [{loc1 : results[0].loc,
-                                       loc2 : results[1].loc,
-                                       loc3 : results[2].loc,
-                                       loc4 : results[3].loc,
+                            blocks : [{loc1 : results[1].loc,
+                                       loc2 : results[2].loc,
+                                       loc3 : results[3].loc,
+                                       loc4 : results[4].loc,
                                        score : 1}] 
                         });
 
