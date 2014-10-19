@@ -4,7 +4,8 @@
  */
 
 var express = require('express'),
-	routes = require('./routes'),
+	routes = require('./routes'),  
+    blocks = require('./routes/blocks'), 
 	http = require('http'),
 	path = require('path'),
     io = require('socket.io'),
@@ -35,6 +36,7 @@ if ('development' == app.get('env')) {
 }
 
 app.get('/', routes.index);
+app.get('/blocks', blocks.blocks);
 
 function handler (req, res) {
     fs.readfile(__direname  + '/index.html',
@@ -74,60 +76,58 @@ blocksio.sockets.on('connection', function(socket) {
 
     function userWithCoordsProto() {
 
-        this.coordsVisited = [];
+        this.visitedIntersections = [];        
         this.userId = "";
+
         var self = this;
 
         this.updateBlocks = function(coords) {
-            this.coordsVisited.push(coords);
 
-            this.getClosestIntersections(coords, function(results) {
-                var blocks = self.calculateBlocks(results) 
-                console.log(blocks);
+            var closestNextIntersection = self.getClosestIntersections(coords, 1 , function(results) {
+                console.log(results[0].loc);
+                console.log(self.visitedIntersections[self.visitedIntersections.length - 1].loc);
+                console.log(self.visitedIntersections[0].loc);
 
-                var newUser = User({
-                    userId : self.userId,
-                    blocks : [{loc1 : blocks[0],
-                               loc2 : blocks[1],
-                               loc3 : blocks[2],
-                               loc4 : blocks[3],
-                               score : 1}] 
-                });
+                if (results[0].loc[0] != self.visitedIntersections[self.visitedIntersections.length - 1].loc[0]) {
 
-                newUser.save(console.log);
+                    self.visitedIntersections.push(results[0]);
+
+                    console.log("updating blocks!");
+
+                    // update blocks owned
+                    self.getClosestIntersections(coords, 4, function(results) {
+                        var blocks = self.calculateBlocks(results) 
+                        console.log(blocks);
+
+                        var newUser = User({
+                            userId : self.userId,
+                            blocks : [{loc1 : blocks[0],
+                                       loc2 : blocks[1],
+                                       loc3 : blocks[2],
+                                       loc4 : blocks[3],
+                                       score : 1}] 
+                        });
+
+                        newUser.save(console.log);
+                    });
+
+                } 
+            });
+
+
+
+        }
+
+        this.updateBlocksOnStart = function(coords) {            
+            self.getClosestIntersections(coords, 1, function(results) {
+                self.visitedIntersections.push(results[0]);
             });
         }
 
-        this.updateBlocksOnStart = function(coords) {
-            this.coordsVisited.push(coords);
-            this.getNearestValidIntersection(coords, function(results) {
-                var blocks = self.calculateBlocks(results);
-                               
-                var newUser = User({
-                    userId : self.userId,
-                    blocks : [{loc1 : blocks[0],
-                               loc2 : blocks[1],
-                               loc3 : blocks[2],
-                               loc4 : blocks[3],
-                               score : 1}] 
-                });            
-
-                newUser.save(console.log);
-            });
-        }
-
-        this.getClosestIntersections = function(coords, callback) {    
+        this.getClosestIntersections = function(coords, thresh, callback) {    
             Intersection.find({ 
                 loc : { '$near' : coords } 
-            }).limit(4).exec(function(err, results) {
-                callback(results);
-            });
-        }
-
-        this.getNearestValidIntersection = function(coords, callback) {
-            Intersection.find({ 
-                loc : { '$near' : coords } 
-            }).limit(1).exec(function(err, results) {
+            }).limit(thresh).exec(function(err, results) {
                 callback(results);
             });
         }
@@ -135,6 +135,8 @@ blocksio.sockets.on('connection', function(socket) {
         this.calculateBlocks = function(coordsList) {
             return [[1,1],[1,1],[1,1],[1,1]]
         }
+
+        this.get
     }
 
     var userWithCoords = new userWithCoordsProto();   
@@ -145,8 +147,8 @@ blocksio.sockets.on('connection', function(socket) {
             console.log(data.userId);
             console.log(data.coords);
             userWithCoords.userId = data.userId;
-            userWithCoords.updateBlocksOnStart(data.coords);
-        })
+            userWithCoords.updateBlocksOnStart(data.coords);     
+        });
     });
 
     socket.on('updateLocation', function(data) {        
@@ -155,6 +157,6 @@ blocksio.sockets.on('connection', function(socket) {
             console.log(data.userId);
             console.log(data.coords);            
             userWithCoords.updateBlocks(data.coords);
-        })     
+        });
     });
 });
